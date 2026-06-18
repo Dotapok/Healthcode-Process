@@ -112,6 +112,42 @@ func (a *ContratAudit) EnregistreTraceUrgence(
 	return ctx.GetStub().PutState(indexKey, logBytes)
 }
 
+// HealthcodeAuditLog.EnregistreCreationDocument - Enregistre l'empreinte initiale d'un nouveau document médical
+func (a *ContratAudit) EnregistreCreationDocument(
+	ctx contractapi.TransactionContextInterface,
+	recordID string,
+	patientUUID string,
+	auteurUUID string,
+	auteurOrg string,
+	documentHash string,
+) error {
+	txTimestamp, _ := ctx.GetStub().GetTxTimestamp()
+	now := time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos))
+
+	docEntry := modele.CreationDocument{
+		RecordID:    recordID,
+		PatientUUID: patientUUID,
+		AuteurUUID:  auteurUUID,
+		AuteurOrg:   auteurOrg,
+		Hash:        documentHash,
+		Timestamp:   now.Format(time.RFC3339),
+	}
+
+	docBytes, err := json.Marshal(docEntry)
+	if err != nil {
+		return err
+	}
+
+	// On stocke le Hash initial avec une clé basée sur le RecordID
+	// Cela permettra de vérifier rapidement l'intégrité d'un document via son ID
+	docKey, err := ctx.GetStub().CreateCompositeKey("doc~hash", []string{recordID})
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(docKey, docBytes)
+}
+
 // HealthcodeAuditLog.ModificationDAcces - Enregistre l'altération d'un acte médical
 func (a *ContratAudit) ModificationDAcces(
 	ctx contractapi.TransactionContextInterface,
@@ -261,4 +297,78 @@ func (a *ContratAudit) ExporterPourAudit(
 	}
 
 	return complianceLogs, nil
+}
+
+// HealthcodeAuditLog.LogFinancialTransaction - Enregistre un reçu de paiement d'abonnement SaaS (immuable)
+func (a *ContratAudit) LogFinancialTransaction(
+	ctx contractapi.TransactionContextInterface,
+	invoiceNumber string,
+	amount string,
+	currency string,
+	organizationID string,
+	hash string,
+) error {
+	// Récupération sécurisée du timestamp de la transaction
+	txTimestamp, err := ctx.GetStub().GetTxTimestamp()
+	if err != nil {
+		return fmt.Errorf("impossible de lire le timestamp de la transaction: %v", err)
+	}
+	now := time.Unix(txTimestamp.Seconds, int64(txTimestamp.Nanos))
+
+	finEntry := modele.FinancialTransaction{
+		InvoiceNumber:  invoiceNumber,
+		Amount:         amount,
+		Currency:       currency,
+		OrganizationID: organizationID,
+		Hash:           hash,
+		Timestamp:      now.Format(time.RFC3339),
+	}
+
+	finBytes, err := json.Marshal(finEntry)
+	if err != nil {
+		return err
+	}
+
+	// Indexation par clé composite pour retrouver l'historique financier par organisation (org_id + invoice_id)
+	indexKey, err := ctx.GetStub().CreateCompositeKey("org~finance", []string{organizationID, invoiceNumber})
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(indexKey, finBytes)
+}
+
+// HealthcodeAuditLog.GetFinancialHistoryByOrg - Récupère l'historique des paiements d'une clinique
+func (a *ContratAudit) GetFinancialHistoryByOrg(
+	ctx contractapi.TransactionContextInterface,
+	organizationID string,
+) ([]*modele.FinancialTransaction, error) {
+	// SÉCURITÉ : Vérification de l'identité de l'appelant via ABAC
+	id := ctx.GetClientIdentity()
+	roleAttr, _, err := id.GetAttributeValue("role")
+
+	// L'appelant doit être un admin de l'établissement concerné, ou un super-admin
+	if err != nil || (roleAttr != "admin" && roleAttr != "admin_etablissement") {
+		return nil, fmt.Errorf("accès refusé : rôle insuffisant pour consulter l'historique financier")
+	}
+
+	iterator, err := ctx.GetStub().GetStateByPartialCompositeKey("org~finance", []string{organizationID})
+	if err != nil {
+		return nil, err
+	}
+	defer iterator.Close()
+
+	var transactions []*modele.FinancialTransaction
+	for iterator.HasNext() {
+		response, err := iterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var tx modele.FinancialTransaction
+		_ = json.Unmarshal(response.Value, &tx)
+		transactions = append(transactions, &tx)
+	}
+
+	return transactions, nil
 }

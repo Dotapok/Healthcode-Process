@@ -31,3 +31,23 @@ type ModificationDAcces struct {
 	MotifModification string `json:"motif_modification"`
 	Timestamp         string `json:"timestamp"`
 }
+
+// CreationDocument représente l'ancrage initial de l'empreinte d'un document médical (ordonnance, compte rendu, etc.)
+type CreationDocument struct {
+	RecordID    string `json:"record_id"`    // L'ID du document côté Laravel (ex: ORD-123)
+	PatientUUID string `json:"patient_uuid"` // Le patient concerné
+	AuteurUUID  string `json:"auteur_uuid"`  // Le médecin qui a créé le document
+	AuteurOrg   string `json:"auteur_org"`   // L'hôpital de l'auteur
+	Hash        string `json:"hash"`         // L'empreinte cryptographique initiale (SHA-256) du document
+	Timestamp   string `json:"timestamp"`    // Date de création sécurisée par la blockchain
+}
+
+// FinancialTransaction représente la trace immuable d'un reçu ou paiement
+type FinancialTransaction struct {
+	InvoiceNumber  string `json:"invoice_number"`
+	Amount         string `json:"amount"` // String ou float64, ici string pour éviter les problèmes de précision
+	Currency       string `json:"currency"`
+	OrganizationID string `json:"organization_id"`
+	Hash           string `json:"hash"` // Le hash généré par Laravel garantissant l'intégrité
+	Timestamp      string `json:"timestamp"`
+}
