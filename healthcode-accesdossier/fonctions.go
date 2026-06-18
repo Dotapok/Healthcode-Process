@@ -85,7 +85,7 @@ func (d *DossierAccesContract) AccordAccesDossier(
 
 	// 2. INTERACTION INTER-CHAINCODE N°1 : Appel de HealthcodeConsentement.VerificationNiveauAcces
 	// Arguments attendus par HealthcodeConsentement : consentementID, PrecisionNiveauRequisJSON, ipHash, deviceID
-	nomChaincodeConsent := "HealthcodeConsentement"
+	nomChaincodeConsent := "healthcode-consentement"
 	argumentsConsent := [][]byte{
 		[]byte("VerificationNiveauAcces"),
 		[]byte(demande.ConsentementID),
@@ -110,7 +110,7 @@ func (d *DossierAccesContract) AccordAccesDossier(
 	}
 
 	// 3. INTERACTION INTER-CHAINCODE N°2 : Appel direct à HealthcodeAuditLog pour acter l'accès au dossier médical
-	nomChaincodeAudit := "HealthcodeAuditLog"
+	nomChaincodeAudit := "healthcode-auditlog"
 	txID := ctx.GetStub().GetTxID()
 	clientOrg, _ := ctx.GetClientIdentity().GetMSPID()
 

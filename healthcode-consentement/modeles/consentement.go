@@ -64,14 +64,14 @@ type Consentement struct {
 	BeneficiairePrecisionAcces PrecisionConsentement `json:"beneficiaire_precision_acces"`
 	TypeConsentement           TypeConsentement      `json:"type_consentement"`
 	DateDebut                  string                `json:"date_debut"`
-	DateFin                    string                `json:"date_fin,omitempty"`
-	NbAccesMax                 int                   `json:"nb_acces_max,omitempty"`
+	DateFin                    string                `json:"date_fin"`
+	NbAccesMax                 int                   `json:"nb_acces_max"`
 	NbAccesUses                int                   `json:"nb_acces_uses"`
 	StatutConsentement         StatutConsentement    `json:"statut_consentement"`
 	MotifAccorde               string                `json:"motif_accorde"`
-	MotifRefus                 string                `json:"motif_refus,omitempty"`
+	MotifRefus                 string                `json:"motif_refus"`
 	DateCreation               string                `json:"date_creation"`
-	DateRevocation             string                `json:"date_revocation,omitempty"`
+	DateRevocation             string                `json:"date_revocation"`
 	SignaturePatient           string                `json:"signature_patient"`
 }
 

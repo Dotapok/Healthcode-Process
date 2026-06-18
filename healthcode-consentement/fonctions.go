@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	modele "healthcode/concentement/modeles"
+	modele "healthcode/consentement/modeles"
 	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
@@ -193,7 +193,7 @@ func (s *ContratIntelligent) VerificationNiveauAcces(
 	}
 
 	// Nom du chaincode cible à appeler (doit correspondre au nom défini lors du déploiement)
-	nomChaincodeAudit := "healthcode auditlog"
+	nomChaincodeAudit := "healthcode-auditlog"
 
 	// Le canal cible. Si vide "", Fabric utilise le canal courant de la transaction actuelle (Recommandé).
 	canalCible := ""
