@@ -1,4 +1,4 @@
-module healthcode/concentement
+module healthcode/consentement
 
 go 1.25.5
 
