@@ -308,31 +308,32 @@ func (s *ContratIntelligent) RecupererConsentementsPatient(
 func (s *ContratIntelligent) RecupererHistoriqueConsentementPrecisParID(
 	ctx contractapi.TransactionContextInterface,
 	consentementID string,
-) ([]map[string]interface{}, error) {
+) ([]modele.HistoriqueConsentement, error) {
 	resultsIterator, err := ctx.GetStub().GetHistoryForKey(consentementID)
 	if err != nil {
 		return nil, fmt.Errorf("impossible de lire l'historique de la clef: %v", err)
 	}
 	defer resultsIterator.Close()
 
-	var historyList []map[string]interface{}
+	var historyList []modele.HistoriqueConsentement
 	for resultsIterator.HasNext() {
 		response, err := resultsIterator.Next()
 		if err != nil {
 			return nil, err
 		}
 
-		txInfo := make(map[string]interface{})
-		txInfo["tx_id"] = response.TxId
-		txInfo["is_delete"] = response.IsDelete
-
-		var consent modele.Consentement
-		if len(response.Value) > 0 {
-			_ = json.Unmarshal(response.Value, &consent)
-			txInfo["value"] = consent
+		txInfo := modele.HistoriqueConsentement{
+			TxId:     response.TxId,
+			IsDelete: response.IsDelete,
 		}
 
-		txInfo["timestamp"] = time.Unix(response.Timestamp.Seconds, int64(response.Timestamp.Nanos)).Format(time.RFC3339)
+		if len(response.Value) > 0 {
+			var consent modele.Consentement
+			_ = json.Unmarshal(response.Value, &consent)
+			txInfo.Value = &consent
+		}
+
+		txInfo.Timestamp = time.Unix(response.Timestamp.Seconds, int64(response.Timestamp.Nanos)).Format(time.RFC3339)
 		historyList = append(historyList, txInfo)
 	}
 

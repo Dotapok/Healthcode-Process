@@ -75,6 +75,14 @@ type Consentement struct {
 	SignaturePatient           string                `json:"signature_patient"`
 }
 
+// Structure pour l'historique d'un consentement
+type HistoriqueConsentement struct {
+	TxId      string        `json:"tx_id"`
+	IsDelete  bool          `json:"is_delete"`
+	Value     *Consentement `json:"value,omitempty"`
+	Timestamp string        `json:"timestamp"`
+}
+
 // fonction de verification de precision du type d'acces
 func (pre *PrecisionConsentement) EstVide() bool {
 	return !(pre.DossierComplet || pre.Prescriptions || pre.Imagerie || pre.Biologie || pre.Psychiatrique || pre.Addictologie || pre.Antecedents || pre.Vaccinations || pre.UrgencesHistorique || pre.HistoriqueHospitalisation || pre.Autre)
@@ -82,40 +90,50 @@ func (pre *PrecisionConsentement) EstVide() bool {
 
 // fonction pour s'assurer que le consentement couvre tous les champs requis
 func (pre *PrecisionConsentement) VerifieSiPrecisionSuffisant(requis PrecisionConsentement) bool {
-	if requis.DossierComplet {
+	// Si le patient a accordé un accès au dossier complet, alors toutes les demandes sont automatiquement couvertes
+	if pre.DossierComplet {
 		return true
 	}
-	if requis.Prescriptions && pre.Prescriptions {
-		return true
+
+	// Si un accès au dossier complet est requis mais que le patient ne l'a pas donné
+	if requis.DossierComplet && !pre.DossierComplet {
+		return false
 	}
-	if requis.Imagerie && pre.Imagerie {
-		return true
+
+	// Pour chaque autre domaine, si c'est requis, cela DOIT être autorisé
+	if requis.Prescriptions && !pre.Prescriptions {
+		return false
 	}
-	if requis.Biologie && pre.Biologie {
-		return true
+	if requis.Imagerie && !pre.Imagerie {
+		return false
 	}
-	if requis.Psychiatrique && pre.Psychiatrique {
-		return true
+	if requis.Biologie && !pre.Biologie {
+		return false
 	}
-	if requis.Addictologie && pre.Addictologie {
-		return true
+	if requis.Psychiatrique && !pre.Psychiatrique {
+		return false
 	}
-	if requis.Antecedents && pre.Antecedents {
-		return true
+	if requis.Addictologie && !pre.Addictologie {
+		return false
 	}
-	if requis.Vaccinations && pre.Vaccinations {
-		return true
+	if requis.Antecedents && !pre.Antecedents {
+		return false
 	}
-	if requis.UrgencesHistorique && pre.UrgencesHistorique {
-		return true
+	if requis.Vaccinations && !pre.Vaccinations {
+		return false
 	}
-	if requis.HistoriqueHospitalisation && pre.HistoriqueHospitalisation {
-		return true
+	if requis.UrgencesHistorique && !pre.UrgencesHistorique {
+		return false
 	}
-	if requis.Autre && pre.Autre {
-		return true
+	if requis.HistoriqueHospitalisation && !pre.HistoriqueHospitalisation {
+		return false
 	}
-	return false
+	if requis.Autre && !pre.Autre {
+		return false
+	}
+
+	// Si aucune des vérifications n'a échoué, alors tous les champs requis sont bien couverts par le consentement
+	return true
 }
 
 // fonction pour s'assurer que le consentement est valide
